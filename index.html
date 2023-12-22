@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+<title>Show Image Dimensions Locally</title>
+<style type='text/css'>
+body {
+    font-family: sans-serif;
+}
+
+#canvas {
+   /* height: 90vh; */
+    border: 1px solid #111111;
+}
+
+</style>
+<script type='text/javascript'>
+</script>
+</head>
+<body>
+<form action='#' onsubmit="return false;">
+    <input type='file' id='imgfile' multiple />
+    <!--<input type='button' id='btnLoad' value='Load' onclick='loadImage();' />-->
+</form>
+    <canvas id="canvas"></canvas>
+    <p>
+    <pre>
+    </pre>
+    </p>
+</body>
+<script type='text/javascript' src='./util.js'></script>
+<script type='text/javascript' src='./lib.js'></script>
+<!--<script type='text/javascript' src='./index.js'></script>-->
+</html>
