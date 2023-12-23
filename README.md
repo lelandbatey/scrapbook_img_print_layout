@@ -1,5 +1,12 @@
 Scrapbook Image Print Layout
 ============================
+<p align="center">
+  <a href="https://lelandbatey.github.io/scrapbook_img_print_layout/">
+    <img src="./scrapbook_grid_2023-11-05_17-05-52-796.png" width="300px"/>
+  </a>
+</p>
+
+[Link to tool is here: https://lelandbatey.github.io/scrapbook_img_print_layout/](https://lelandbatey.github.io/scrapbook_img_print_layout/)
 
 This repo is a tool for my scrapbooking workflow. It's for laying out a grid of 9 images in a 3-by-3 grid, each to be printed as a 2inch x 3inch image. I made this because when scrapbooking, we prefer 2inch by 3inch images, but actually generating these 2x3 images at home via printing is a pain. Some problems include:
 

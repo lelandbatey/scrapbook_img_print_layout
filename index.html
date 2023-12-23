@@ -81,7 +81,9 @@ form {
 .hero {
     font-size: 5.5rem;
 }
-
+.textblock {
+    width: 500px;
+}
 </style>
 <script type='text/javascript'>
 </script>
@@ -98,6 +100,33 @@ form {
             <form action='#' onsubmit="return false;">
                 <input type='file' id='imgfile' multiple />
             </form>
+        </div>
+    </div>
+    <div class="row">
+
+        <div class="textblock">
+<!--
+To use, drag and drop your images into the box above, or select them from the file picker. Once inside, you can move your images around by dragging. Click an image in order to see the "image handles" which let you resize, rotate, and crop.
+
+- 🟩 green square is for resizing
+- 🟥 red square rotates the image once clockwise
+- 🟦 blue square changes to showing the "cropped" view, and whichever rectangle the blue square is inside is the rectangle that image will be cropped to.
+
+Once you have all the photos sized and located in the rectangle where you want them, click the blue square for each photo to make that photo only display cropped. Once you've done that for all 9 and the image looks how you want, click the "Download" button above to download the whole image.
+
+Note that this is NOT built to be used on a phone, and probably won't work at all on a mobile device. I recommend using a desktop/laptop with a mouse and keyboard.
+
+[Source code on Github.](https://github.com/lelandbatey/scrapbook_img_print_layout)
+-->
+<p>To use, drag and drop your images into the box above, or select them from the file picker. Once inside, you can move your images around by dragging. Click an image in order to see the &quot;image handles&quot; which let you resize, rotate, and crop.</p>
+<ul>
+<li>🟩 green square is for resizing</li>
+<li>🟥 red square rotates the image once clockwise</li>
+<li>🟦 blue square changes to showing the &quot;cropped&quot; view, and whichever rectangle the blue square is inside is the rectangle that image will be cropped to.</li>
+</ul>
+<p>Once you have all the photos sized and located in the rectangle where you want them, click the blue square for each photo to make that photo only display cropped. Once you&#39;ve done that for all 9 and the image looks how you want, click the &quot;Download&quot; button above to download the whole image.</p>
+<p>Note that this is NOT built to be used on a phone, and probably won&#39;t work at all on a mobile device. I recommend using a desktop/laptop with a mouse and keyboard.</p>
+<p><a href="https://github.com/lelandbatey/scrapbook_img_print_layout">Source code on Github.</a></p>
         </div>
     </div>
     <div class="row">
