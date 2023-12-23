@@ -444,10 +444,10 @@ const testA2 = new Rect({ x: 600, y: -852 }, { x: 1800, y: 806.13449 });
 const testC2 = new Rect({ x: 2700, y: 2050 }, { x: 3900, y: 2850 });
 const cases = [
     { A: testA1, B: testB1, expect: (r) => { console.assert(r !== null && jf(r.topleft) == jf({ x: 0, y: 0 }) && jf(r.btright) == jf({ x: 1, y: 1 })); } },
-    //{A: testA1, B: testB1, expect: (r: Rect|null)=>{console.assert(r !== null && jf(r.topleft) == jf({x: 0, y:0}) && r.width == 1 && r.height == 1); }},
-    //{A: testA1, B: testB2, expect: (r: Rect|null)=>{console.assert(r !== null && jf(r.topleft) == jf({x: 2, y:0}) && r.width == 1 && r.height == 1); }},
-    //{A: testA1, B: testB3, expect: (r: Rect|null)=>{console.assert(r !== null && jf(r.topleft) == jf({x: 0, y:1}) && r.width == 1 && r.height == 1); }},
-    //{A: testA1, B: testB4, expect: (r: Rect|null)=>{console.assert(r !== null && jf(r.topleft) == jf({x: 2, y:1}) && r.width == 1 && r.height == 1); }},
+    { A: testA1, B: testB1, expect: (r) => { console.assert(r !== null && jf(r.topleft) == jf({ x: 0, y: 0 }) && r.width == 1 && r.height == 1); } },
+    { A: testA1, B: testB2, expect: (r) => { console.assert(r !== null && jf(r.topleft) == jf({ x: 2, y: 0 }) && r.width == 1 && r.height == 1); } },
+    { A: testA1, B: testB3, expect: (r) => { console.assert(r !== null && jf(r.topleft) == jf({ x: 0, y: 1 }) && r.width == 1 && r.height == 1); } },
+    { A: testA1, B: testB4, expect: (r) => { console.assert(r !== null && jf(r.topleft) == jf({ x: 2, y: 1 }) && r.width == 1 && r.height == 1); } },
     { A: testA2, B: testC2, expect: (r) => { console.assert(r == null); } },
 ];
 for (const tcase of cases) {
@@ -465,21 +465,36 @@ window.DRAWSTATE = {
     rects: [],
     dbgtext: '',
 };
+function downloadCanvas(canvas) {
+    const now = new Date();
+    const year_s = `${now.getFullYear()}`;
+    const month_s = `${now.getMonth()}`.padStart(2, '0');
+    const day_s = `${now.getDay()}`.padStart(2, '0');
+    const hour_s = `${now.getHours()}`.padStart(2, '0');
+    const minutes_s = `${now.getMinutes()}`.padStart(2, '0');
+    const seconds_s = `${now.getSeconds()}`.padStart(2, '0');
+    const ms_s = `${now.getMilliseconds()}`.padStart(3, '0');
+    const fname = `scrapbook_grid_${year_s}-${month_s}-${day_s}_${hour_s}-${minutes_s}-${seconds_s}-${ms_s}.png`;
+    let downloadLink = document.createElement('a');
+    downloadLink.setAttribute('download', fname);
+    canvas.toBlob(function (blob) {
+        if (!blob) {
+            return;
+        }
+        let url = URL.createObjectURL(blob);
+        downloadLink.setAttribute('href', url);
+        downloadLink.click();
+    });
+}
 function loadImages(inputFiles) {
-    //console.log({'input.files': inputFiles, length: inputFiles!.length});
     for (let fidx = 0; fidx < inputFiles.length; fidx++) {
         const file = inputFiles[fidx];
         const fr = new FileReader();
         fr.addEventListener('load', () => {
             const img = new Image();
             img.addEventListener('load', () => {
-                const pr = (async () => {
+                (async () => {
                     const nm = new AppImg(img);
-                    //console.log(`Img: ${fidx} Natural height: ${nm.img!.naturalHeight} Natural width: ${nm.img!.naturalWidth}`);
-                    if (nm.img.naturalHeight > nm.img.naturalWidth) {
-                        //console.log(`Img: ${fidx} Rotating image`);
-                        //await nm.rotateClockwise();
-                    }
                     nm.position.x = window.DRAWSTATE.rects[fidx].x;
                     nm.position.y = window.DRAWSTATE.rects[fidx].y;
                     nm.scale = calcScale(nm);
@@ -487,9 +502,6 @@ function loadImages(inputFiles) {
                     window.DRAWSTATE.uiItems.push(nm);
                     console.log(`pushed image ${fidx} as #${window.DRAWSTATE.images.length - 1}`);
                 })();
-                pr.then(() => {
-                    //console.log(`Finished adding file ${fidx}`);
-                });
             });
             img.src = fr.result;
         });
@@ -518,6 +530,32 @@ document.addEventListener('DOMContentLoaded', _ => {
         }
     }
     const canvas = document.querySelector('#canvas');
+    document.querySelector('#download').addEventListener('click', () => {
+        downloadCanvas(canvas);
+    });
+    let dropzone = document.querySelector('#dropzone');
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
+    dropzone.addEventListener('drop', (e) => {
+        var _a;
+        e.preventDefault();
+        if (!(e instanceof DragEvent)) {
+            return;
+        }
+        if (!((_a = e.dataTransfer) === null || _a === void 0 ? void 0 : _a.items)) {
+            return;
+        }
+        let files = [];
+        for (const item of e.dataTransfer.items) {
+            let f = item.getAsFile();
+            if (!f) {
+                continue;
+            }
+            files.push(f);
+        }
+        loadImages(files);
+    });
     canvas.width = 4000;
     canvas.height = 3000;
     const canv = canvas;
@@ -543,7 +581,6 @@ document.addEventListener('DOMContentLoaded', _ => {
     const radius = 3 * 3; // Radius in pixels, 3 squared
     let firstPos; // Keep track of first position
     let selectedItem = null;
-    let imgscopy = [];
     function getXY(e) {
         const rect = canvas.getBoundingClientRect();
         const t = { x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height };
@@ -598,7 +635,6 @@ document.addEventListener('DOMContentLoaded', _ => {
             window.DRAWSTATE.dbgtext = 'STOPPED DRAGGING';
             selectedItem === null || selectedItem === void 0 ? void 0 : selectedItem.dragEndHandler();
         }
-        imgscopy = [];
     });
     window.requestAnimationFrame(do_the_frame);
 });

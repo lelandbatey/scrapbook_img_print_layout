@@ -13,13 +13,97 @@ body {
     border: 1px solid #111111;
 }
 
+.row {
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 40px;
+    flex-direction: column;
+}
+
+#dropzone {
+    width: 400px;
+    height: 300px;
+    margin: 0 auto;
+
+    border: 5px dashed blue;
+}
+
+form {
+    width: 400px;
+    height: 300px;
+    margin: auto auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+
+#imgfile {
+/*    margin: auto auto; */
+    display: block;
+    width: 200px;
+    height: 25px;
+}
+
+
+#download {
+    display: block;
+    width: 300px;
+    height: 80px;
+    font-size: 26px;
+
+    box-shadow: 0px 1px 0px 0px #f0f7fa;
+    background:linear-gradient(to bottom, #33bdef 5%, #019ad2 100%);
+    background-color:#33bdef;
+    border-radius:6px;
+    border:1px solid #057fd0;
+    display:inline-block;
+    cursor:pointer;
+    color:#ffffff;
+    font-family:Arial;
+    font-weight:bold;
+    padding:6px 24px;
+    text-decoration:none;
+    text-shadow:0px -1px 0px #5b6178;
+}
+#download:hover {
+    background:linear-gradient(to bottom, #019ad2 5%, #33bdef 100%);
+    background-color:#019ad2;
+}
+#download:active {
+    position:relative;
+    top:1px;
+}
+
+.hero {
+    font-size: 5.5rem;
+}
+
 </style>
 <script type='text/javascript'>
 </script>
 </head>
 <body>
-<form action='#' onsubmit="return false;">
-    <input type='file' id='imgfile' multiple />
+    <div class="row" style="width: 100vw;">
+        <h1 class='hero'>Scrapbook Layout</h1>
+        <div>
+        <h3> Try zooming out your browser (ctrl minus) </h3>
+        </div>
+    </div>
+    <div class="row">
+        <div id="dropzone">
+            <form action='#' onsubmit="return false;">
+                <input type='file' id='imgfile' multiple />
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <button id='download'>⬇Download Img</button>
+    </div>
+
 </form>
     <canvas id="canvas"></canvas>
     <p>
