@@ -776,13 +776,13 @@ function loadImages(inputFiles: NamedBlob[]): void {
             img.addEventListener('load', () => {
                 (async () => {
                     const nm = new AppImg({ image: img, name: file.name });
+                    if (nm.width < nm.height) {
+                        await nm.rotateClockwise();
+                    }
                     let rectIndex = window.DRAWSTATE.images.length % window.DRAWSTATE.rects.length;
 
                     nm.position.x = window.DRAWSTATE.rects[rectIndex].x;
                     nm.position.y = window.DRAWSTATE.rects[rectIndex].y;
-                    if (nm.width < nm.height) {
-                        await nm.rotateClockwise();
-                    }
                     nm.scale = calcScale(nm)!;
                     window.DRAWSTATE.images.push(nm);
                     window.DRAWSTATE.uiItems.push(nm);
