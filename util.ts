@@ -1,63 +1,63 @@
 
 function jf(x: any): string {
-	return JSON.stringify(x);
+    return JSON.stringify(x);
 }
 type WayPoints = {
-	nw: Coordinate;
-	ne: Coordinate;
-	se: Coordinate;
-	sw: Coordinate;
-	n: Coordinate;
-	e: Coordinate;
-	s: Coordinate;
-	w: Coordinate;
-	all : Map<string, Coordinate>;
-	corners: Map<string, Coordinate>;
-	edges: Map<string, Coordinate>;
+    nw: Coordinate;
+    ne: Coordinate;
+    se: Coordinate;
+    sw: Coordinate;
+    n: Coordinate;
+    e: Coordinate;
+    s: Coordinate;
+    w: Coordinate;
+    all: Map<string, Coordinate>;
+    corners: Map<string, Coordinate>;
+    edges: Map<string, Coordinate>;
 }
 
 function rectWaypoints(tl: Coordinate, br: Coordinate): WayPoints {
-	const nw = tl;
-	const sw = {x: tl.x, y: br.y};
-	const ne = {x: br.x, y: tl.y};
-	const se = br;
-	const n = {x: nw.x + ((ne.x - nw.x) / 2), y: nw.y};
-	const s = {x: sw.x + ((se.x - sw.x) / 2), y: sw.y};
-	const e = {x: ne.y + ((se.y - ne.y) / 2), y: ne.x};
-	const w = {x: nw.y + ((sw.y - nw.y) / 2), y: nw.x};
-	const wp: WayPoints = {
-		nw: nw,
-		sw: sw,
-		ne: ne,
-		se: se,
-		n : n,
-		s : s,
-		e : e,
-		w : w,
-		all: new Map<string, Coordinate>([
-			['nw', nw],
-			['sw', sw],
-			['ne', ne],
-			['se', se],
-			['n', n],
-			['s', s],
-			['e', e],
-			['w', w],
-		]),
-		corners: new Map<string, Coordinate>([
-			['nw', nw],
-			['sw', sw],
-			['ne', ne],
-			['se', se],
-		]),
-		edges: new Map<string, Coordinate>([
-			['n', n],
-			['s', s],
-			['e', e],
-			['w', w],
-		]),
-	};
-	return wp;
+    const nw = tl;
+    const sw = { x: tl.x, y: br.y };
+    const ne = { x: br.x, y: tl.y };
+    const se = br;
+    const n = { x: nw.x + ((ne.x - nw.x) / 2), y: nw.y };
+    const s = { x: sw.x + ((se.x - sw.x) / 2), y: sw.y };
+    const e = { x: ne.y + ((se.y - ne.y) / 2), y: ne.x };
+    const w = { x: nw.y + ((sw.y - nw.y) / 2), y: nw.x };
+    const wp: WayPoints = {
+        nw: nw,
+        sw: sw,
+        ne: ne,
+        se: se,
+        n: n,
+        s: s,
+        e: e,
+        w: w,
+        all: new Map<string, Coordinate>([
+            ['nw', nw],
+            ['sw', sw],
+            ['ne', ne],
+            ['se', se],
+            ['n', n],
+            ['s', s],
+            ['e', e],
+            ['w', w],
+        ]),
+        corners: new Map<string, Coordinate>([
+            ['nw', nw],
+            ['sw', sw],
+            ['ne', ne],
+            ['se', se],
+        ]),
+        edges: new Map<string, Coordinate>([
+            ['n', n],
+            ['s', s],
+            ['e', e],
+            ['w', w],
+        ]),
+    };
+    return wp;
 }
 
 
@@ -68,37 +68,40 @@ function rectWaypoints(tl: Coordinate, br: Coordinate): WayPoints {
 // 2. The width of the image is 1200 px or more
 // The *usual* outcome is that the image is slightly too large for the cropbox in one dimension,
 // while it's exactly the right height for the cropbox in the other direction.
-function calcScale(aimg: AppImg): number| null {
-	const img = aimg.img;
-	if (img === null) {
-		return null;
-	}
-	const h = img.naturalHeight;
-	const w = img.naturalWidth;
-	const aspectRatio = h / w;
-	if (aspectRatio > (2 / 3)) {
-		return lw / w;
-	}
+function calcScale(aimg: AppImg): number | null {
+    const img = aimg.img;
+    if (img === null) {
+        return null;
+    }
+    const h = img.naturalHeight;
+    const w = img.naturalWidth;
+    const aspectRatio = h / w;
+    if (aspectRatio > (2 / 3)) {
+        return lw / w;
+    }
 
-	return lh / h;
+    return lh / h;
 }
 
 
 function depthSort(imgs: AppImg[]) {
-	const ordered = imgs.map(x => x);
-	ordered.sort((a, b) => (a.depth! - b.depth!));
-	return ordered;
+    const ordered = imgs.map(x => x);
+    ordered.sort((a, b) => (a.depth! - b.depth!));
+    return ordered;
 }
 
 
 function shallowCopyImgs(imgs: AppImg[]) {
-	return imgs.map(aimg => new AppImg(
-		aimg.img,
-		aimg.depth,
-		aimg.state,
-		aimg.scale,
-		{x: aimg.position.x, y: aimg.position.y},
-		aimg.rotationcount,
-		aimg.manually_scaled,
-	));
+    return imgs.map(aimg => new AppImg(
+        { image: aimg.img!, name: aimg.name },
+        aimg.depth,
+        aimg.state,
+        aimg.scale,
+        { x: aimg.position.x, y: aimg.position.y },
+        aimg.rotationcount,
+        aimg.manually_scaled,
+    ));
+}
+function clamp(n: number, min: number, max: number): number {
+    return Math.min(Math.max(n, min), max);
 }

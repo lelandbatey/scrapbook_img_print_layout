@@ -70,5 +70,8 @@ function depthSort(imgs) {
     return ordered;
 }
 function shallowCopyImgs(imgs) {
-    return imgs.map(aimg => new AppImg(aimg.img, aimg.depth, aimg.state, aimg.scale, { x: aimg.position.x, y: aimg.position.y }, aimg.rotationcount, aimg.manually_scaled));
+    return imgs.map(aimg => new AppImg({ image: aimg.img, name: aimg.name }, aimg.depth, aimg.state, aimg.scale, { x: aimg.position.x, y: aimg.position.y }, aimg.rotationcount, aimg.manually_scaled));
+}
+function clamp(n, min, max) {
+    return Math.min(Math.max(n, min), max);
 }

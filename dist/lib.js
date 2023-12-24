@@ -30,13 +30,18 @@ class Rect {
     get height() {
         return this.btright.y - this.topleft.y;
     }
+    get center() {
+        return { x: this.topleft.x + (this.width / 2), y: this.topleft.y + (this.height / 2) };
+    }
 }
 class Button {
     constructor(topleft = { x: 0, y: 0 }, btright = { x: 0, y: 0 }, text = '', name = 'randomname', fill = '#00FF00', dragCallback = null, clickCallback = null) {
         this.topleft = topleft;
         this.btright = btright;
+        this.center = { x: this.topleft.x + (this.width / 2), y: this.topleft.y + (this.height / 2) };
         if (dragCallback === null) {
-            dragCallback = (b, start, current) => {
+            dragCallback = (b, firstPos, currentPos) => {
+                this.defaultDragHandler(firstPos, currentPos);
                 //console.log(`dragging name: ${b.name} Start: ${start}  currentPos: ${current}`);
                 return;
             };
@@ -65,7 +70,8 @@ class Button {
     draw(ctx) {
         ctx.fillStyle = this.fill;
         ctx.fillRect(this.topleft.x, this.topleft.y, this.width, this.height);
-        ctx.fillText(this.text, this.topleft.x, this.topleft.y);
+        ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+        ctx.fillText(this.text, this.topleft.x, this.btright.y);
     }
     get height() {
         return this.btright.y - this.topleft.y;
@@ -78,16 +84,22 @@ class Button {
     clickEndHandler(firstPos, endPt) {
         this.clickCallback(this, firstPos);
     }
-    dragHandler(firstPos, currentPos) {
+    defaultDragHandler(firstPos, currentPos) {
         if (this.startDrag == null) {
             this.startDrag = new Rect(structuredClone(this.topleft), structuredClone(this.btright));
         }
         const dx = firstPos.x - currentPos.x;
         const dy = firstPos.y - currentPos.y;
-        this.topleft.x = this.startDrag.topleft.x - dx;
-        this.topleft.y = this.startDrag.topleft.y - dy;
-        this.btright.x = this.startDrag.btright.x - dx;
-        this.btright.y = this.startDrag.btright.y - dy;
+        this.center.x = this.startDrag.center.x - dx;
+        this.center.y = this.startDrag.center.y - dy;
+        const h = this.height;
+        const w = this.width;
+        this.topleft.x = this.center.x - (w / 2);
+        this.topleft.y = this.center.y - (h / 2);
+        this.btright.x = this.center.x + (w / 2);
+        this.btright.y = this.center.y + (h / 2);
+    }
+    dragHandler(firstPos, currentPos) {
         this.dragCallback(this, firstPos, currentPos);
     }
     dragEndHandler() {
@@ -100,14 +112,16 @@ var ImgState;
     ImgState[ImgState["INACTIVE"] = 2] = "INACTIVE";
 })(ImgState || (ImgState = {}));
 class AppImg {
-    constructor(img = null, depth = null, state = ImgState.INACTIVE, scale = 1, position = { x: 0, y: 0 }, rotationcount = 0, manually_scaled = false) {
+    constructor(image, depth = null, state = ImgState.INACTIVE, scale = 1, position = { x: 0, y: 0 }, rotationcount = 0, manually_scaled = false) {
         this.showCropped = false;
         this.cropRect = null;
         this.cropBtn = null;
+        const img = image.image;
         this.img = img;
         if (img && img.naturalHeight === undefined) {
             throw Error;
         }
+        this.name = image.name;
         // Subsequent rotations will use this original as the starting point, with this.img being
         // replaced.
         this.original = img;
@@ -186,6 +200,7 @@ class AppImg {
         return this.cropRect;
     }
     draw(ctx) {
+        ctx.font = 'bold 28px sans';
         if (this.showCropped && this.cropRectangle) {
             let overlap = rectangleIntersection(this.imgBoundingBox(), this.cropRect);
             if (overlap) {
@@ -195,6 +210,9 @@ class AppImg {
                 // scale the image-space coordinates to match the natural coordinates.
                 const siscr = new Rect({ x: iscr.topleft.x / this.scale, y: iscr.topleft.y / this.scale }, { x: iscr.btright.x / this.scale, y: iscr.btright.y / this.scale });
                 ctx.drawImage(this.img, siscr.topleft.x, siscr.topleft.y, siscr.width, siscr.height, overlap.topleft.x, overlap.topleft.y, overlap.width, overlap.height);
+                // Draw the name of the image in the SW corner
+                ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+                ctx.fillText(this.name, this.cropRectangle.topleft.x, this.cropRectangle.btright.y + 40);
             }
             else {
                 ctx.drawImage(this.img, this.position.x, this.position.y, this.width, this.height);
@@ -284,12 +302,20 @@ class AppImg {
             'sw': [-1, 1],
             'nw': [-1, -1],
         };
+        const cornerText = {
+            'ne': '🡥',
+            'se': '🡦',
+            'sw': '🡧',
+            'nw': '🡤',
+        };
         for (const [name, corner] of waypoints.corners.entries()) {
             const tl = { x: corner.x - 10, y: corner.y - 10 };
             const br = { x: corner.x + 10, y: corner.y + 10 };
             const getOthers = () => this.btns.filter(b => b.name !== name);
-            const btn = new Button(tl, br, '⇲ ', name, '#00FF00', (b, start, currentPos) => {
+            const btn = new Button(tl, br, cornerText[name], name, '#00FF00', (b, start, currentPos) => {
                 var _a;
+                // gotta call the default for movement.
+                b.defaultDragHandler(start, currentPos);
                 if (!!!((_a = b.startDrag) === null || _a === void 0 ? void 0 : _a.intersectPoint(start))) {
                     return;
                 }
@@ -326,7 +352,34 @@ class AppImg {
                 const size = 20;
                 const tl = { x: north.x - size + 50, y: (north.y - size + nyoffset) };
                 const br = { x: north.x + size + 50, y: (north.y + size + nyoffset) };
-                const btn = new Button(tl, br, 'X', 'cropper', '#0000FF', null, (b) => {
+                const btn = new Button(tl, br, 'X', 'cropper', '#00FFFF', (b, firstPos, currentPos) => {
+                    if (b.startDrag == null) {
+                        b.startDrag = new Rect(structuredClone(b.topleft), structuredClone(b.btright));
+                    }
+                    // if we're being intentionally dragged, then update without caring. if we're
+                    // being incidentally moved, then clamp our movement to the cropRect
+                    const intentionalDrag = b.startDrag.intersectPoint(firstPos);
+                    if (intentionalDrag) {
+                        b.defaultDragHandler(firstPos, currentPos);
+                        return;
+                    }
+                    if (!this.cropRect) {
+                        b.defaultDragHandler(firstPos, currentPos);
+                        return;
+                    }
+                    // here's how we clamp our movement to the croprect
+                    const dx = firstPos.x - currentPos.x;
+                    const dy = firstPos.y - currentPos.y;
+                    const newcenter = { x: b.startDrag.center.x - dx, y: b.startDrag.center.y - dy };
+                    b.center.x = clamp(newcenter.x, this.cropRect.topleft.x, this.cropRect.btright.x);
+                    b.center.y = clamp(newcenter.y, this.cropRect.topleft.y, this.cropRect.btright.y);
+                    const h = b.height;
+                    const w = b.width;
+                    b.topleft.x = b.center.x - (w / 2);
+                    b.topleft.y = b.center.y - (h / 2);
+                    b.btright.x = b.center.x + (w / 2);
+                    b.btright.y = b.center.y + (h / 2);
+                }, (b) => {
                     this.showCropped = !this.showCropped;
                     for (const [ridx, rrect] of window.DRAWSTATE.rects.entries()) {
                         if (rrect.r.intersectPoint(b.topleft)) {
@@ -351,7 +404,6 @@ class AppImg {
                 return reject(new Error('original is null'));
             }
             const canvas1 = document.createElement('canvas');
-            const sideways = this.rotationcount % 2 === 1;
             if (this.rotationcount % 2 === 1) {
                 // Flip the canvas w&h since they'll be 90 from current orientation
                 canvas1.width = this.original.naturalHeight;
@@ -365,8 +417,7 @@ class AppImg {
             if (ctx1 === null) {
                 return reject(new Error('context is null'));
             }
-            // Rotate around the centerpoint of the canvas, but shift by half the width/height of
-            // original unrotated image
+            // Center the 0,0 at the middle of the canvas, then rotate 90 degrees.
             const width = canvas1.width;
             const height = canvas1.height;
             ctx1.translate(width / 2, height / 2);
@@ -385,14 +436,12 @@ class AppImg {
                     }
                     this.scale = sc;
                 }
-                console.log(`Before rotation Natural: ${this.original.naturalHeight}x${this.original.naturalWidth}   After rotation: ${newimg.naturalHeight}x${newimg.naturalWidth}`);
                 this.img = newimg;
                 resolve("hooray");
                 // Disgusting dirty hack to get buttons right:
                 this.deselect();
                 this.select();
             });
-            console.log('Added eventlistener to image');
             newimg.src = rawImgData;
         });
     }
@@ -494,32 +543,30 @@ function loadImages(inputFiles) {
             const img = new Image();
             img.addEventListener('load', () => {
                 (async () => {
-                    const nm = new AppImg(img);
-                    nm.position.x = window.DRAWSTATE.rects[fidx].x;
-                    nm.position.y = window.DRAWSTATE.rects[fidx].y;
+                    const nm = new AppImg({ image: img, name: file.name });
+                    let rectIndex = window.DRAWSTATE.images.length % window.DRAWSTATE.rects.length;
+                    nm.position.x = window.DRAWSTATE.rects[rectIndex].x;
+                    nm.position.y = window.DRAWSTATE.rects[rectIndex].y;
                     nm.scale = calcScale(nm);
                     window.DRAWSTATE.images.push(nm);
                     window.DRAWSTATE.uiItems.push(nm);
-                    console.log(`pushed image ${fidx} as #${window.DRAWSTATE.images.length - 1}`);
+                    console.log(`pushed image ${fidx} named ${nm.name} as #${window.DRAWSTATE.images.length - 1}`);
                 })();
             });
             img.src = fr.result;
         });
-        fr.readAsDataURL(file);
+        fr.readAsDataURL(file.blob);
     }
 }
-window.addEventListener('load', event => {
+function getImagesFromDOM() {
     const input = document.querySelector('#imgfile');
-    input.addEventListener('change', ev => {
-        console.log({ event: ev });
-        let files = input.files;
-        let blobList = [];
-        for (let f of files) {
-            blobList.push(f);
-        }
-        return loadImages(blobList);
-    });
-});
+    let files = input.files;
+    let blobList = [];
+    for (let f of files) {
+        blobList.push({ name: f.name, blob: f });
+    }
+    return blobList;
+}
 document.addEventListener('DOMContentLoaded', _ => {
     for (let row = 0; row < 3; row++) {
         for (let col = 0; col < 3; col++) {
@@ -529,7 +576,13 @@ document.addEventListener('DOMContentLoaded', _ => {
             window.DRAWSTATE.rects.push({ row, col, x, y, height: lh, width: lw, color: 'black', r: rectangle });
         }
     }
+    // sometimes on page load, the user will have items in the #imgfile input because they selected
+    // them then reloaded the page. In that case, we *DO* want to immediately reload these images.
+    loadImages(getImagesFromDOM());
     const canvas = document.querySelector('#canvas');
+    document.querySelector('#imgfile').addEventListener('change', () => {
+        return loadImages(getImagesFromDOM());
+    });
     document.querySelector('#download').addEventListener('click', () => {
         downloadCanvas(canvas);
     });
@@ -552,7 +605,7 @@ document.addEventListener('DOMContentLoaded', _ => {
             if (!f) {
                 continue;
             }
-            files.push(f);
+            files.push({ name: f.name, blob: f });
         }
         loadImages(files);
     });
