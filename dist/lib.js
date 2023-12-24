@@ -199,8 +199,13 @@ class AppImg {
         ;
         return this.cropRect;
     }
+    get center() {
+        const h = this.height;
+        const w = this.width;
+        return { x: this.position.x + (w / 2), y: this.position.y + (h / 2) };
+    }
     draw(ctx) {
-        ctx.font = 'bold 28px sans';
+        ctx.font = 'bold 28px sans-serif';
         if (this.showCropped && this.cropRectangle) {
             let overlap = rectangleIntersection(this.imgBoundingBox(), this.cropRect);
             if (overlap) {
@@ -222,9 +227,14 @@ class AppImg {
             ctx.drawImage(this.img, this.position.x, this.position.y, this.width, this.height);
         }
         if (this.state == ImgState.SELECTED) {
-            ctx.strokeStyle = 'rgba(1, 200, 1, 0.5)';
-            ctx.lineWidth = 10;
-            ctx.strokeRect(this.position.x, this.position.y, this.width, this.height);
+            ctx.strokeStyle = 'rgba(1, 200, 1, 0.25)';
+            const lwd = 10;
+            const hlwd = lwd / 2;
+            ctx.lineWidth = lwd;
+            ctx.strokeRect(this.position.x - hlwd, this.position.y - hlwd, 
+            // adding the padding width twice here to make up for the subtraction from the
+            // position as this is length not position based
+            this.width + hlwd + hlwd, this.height + hlwd + hlwd);
         }
         for (const btn of this.btns) {
             btn.draw(ctx);
@@ -621,9 +631,29 @@ document.addEventListener('DOMContentLoaded', _ => {
             uii.draw(ctx);
             ctx.restore();
         }
-        ctx.strokeStyle = 'rgba(1, 1, 1, 0.8)';
+        // translate by 0.5 for the rectangle drawing so that our rectangles will be drawn with
+        // 1 pixel lines instead of 2 pixel lines. See this stackoverflow:
+        //     https://stackoverflow.com/a/13884434
+        ctx.translate(0.5, 0.5);
         for (const rect of window.DRAWSTATE.rects) {
-            ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+            // The dashed patterns here give us an alternating pattern of white blank black
+            // blank, which we can only acheive by drawing the box twice with two different dashed
+            // patterns that offset each other.
+            //                                     1    1    2
+            //                           0    5    0    5    0
+            //     [1, 3]       black    -   -   -   -   -   -   -
+            //     [0, 2, 1, 1] white      -   -   -   -   -   -
+            //
+            //     End result on screen  b w b w b w b w b w b w b
+            //
+            // The -1 +1 nonsense is to draw the rectangle exactly 1 pixel around the actual
+            // rectangle that we crop into.
+            ctx.strokeStyle = 'rgb(0, 0, 0)';
+            ctx.setLineDash([1, 3]);
+            ctx.strokeRect(rect.x - 1, rect.y - 1, rect.width + 1, rect.height + 1);
+            ctx.strokeStyle = 'rgb(255, 255, 255)';
+            ctx.setLineDash([0, 2, 1, 1]);
+            ctx.strokeRect(rect.x - 1, rect.y - 1, rect.width + 1, rect.height + 1);
         }
         //ctx.fillText(window.DRAWSTATE.dbgtext, 10, 30);
         ctx.restore();
@@ -634,6 +664,28 @@ document.addEventListener('DOMContentLoaded', _ => {
     const radius = 3 * 3; // Radius in pixels, 3 squared
     let firstPos; // Keep track of first position
     let selectedItem = null;
+    window.addEventListener('keydown', (evt) => {
+        const event = evt;
+        const keyDragMap = new Map([
+            ['ArrowUp', [0.0, -1.0]],
+            ['ArrowRight', [1.0, 0.0]],
+            ['ArrowDown', [0.0, 1.0]],
+            ['ArrowLeft', [-1.0, 0.0]],
+        ]);
+        if (!keyDragMap.has(event.key)) {
+            return;
+        }
+        event.preventDefault();
+        if (!selectedItem) {
+            return;
+        }
+        let c = selectedItem.center;
+        if (selectedItem instanceof AppImg) {
+            console.log(`trying to arrow drag from event.key ${event.key} on image ${selectedItem.name} at x${selectedItem.center.x.toFixed(2)},y${selectedItem.center.y.toFixed(2)}`);
+        }
+        selectedItem.dragHandler(c, { x: c.x + keyDragMap.get(event.key)[0], y: c.y + keyDragMap.get(event.key)[1] });
+        selectedItem.dragEndHandler();
+    });
     function getXY(e) {
         const rect = canvas.getBoundingClientRect();
         const t = { x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height };
