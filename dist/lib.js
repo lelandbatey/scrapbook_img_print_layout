@@ -681,9 +681,14 @@ document.addEventListener('DOMContentLoaded', _ => {
         }
         let c = selectedItem.center;
         if (selectedItem instanceof AppImg) {
-            console.log(`trying to arrow drag from event.key ${event.key} on image ${selectedItem.name} at x${selectedItem.center.x.toFixed(2)},y${selectedItem.center.y.toFixed(2)}`);
+            //console.log(`trying to arrow drag from event.key ${event.key} on image ${selectedItem.name} at x${selectedItem.center.x.toFixed(2)},y${selectedItem.center.y.toFixed(2)}`);
         }
-        selectedItem.dragHandler(c, { x: c.x + keyDragMap.get(event.key)[0], y: c.y + keyDragMap.get(event.key)[1] });
+        let [xm, ym] = keyDragMap.get(event.key);
+        if (event.shiftKey) {
+            xm *= 15;
+            ym *= 15;
+        }
+        selectedItem.dragHandler(c, { x: c.x + xm, y: c.y + ym });
         selectedItem.dragEndHandler();
     });
     function getXY(e) {
