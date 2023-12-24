@@ -533,11 +533,11 @@ class AppImg implements UIItem {
         }
         {
             if (!this.cropBtn) {
-                let north: Coordinate = waypoints.n;
+                let center: Coordinate = this.center;
                 let nyoffset: number = 80;
                 const size = 20;
-                const tl = { x: north.x - size + 50, y: (north.y - size + nyoffset) };
-                const br = { x: north.x + size + 50, y: (north.y + size + nyoffset) };
+                const tl = { x: center.x - size, y: (center.y - size + nyoffset) };
+                const br = { x: center.x + size, y: (center.y + size + nyoffset) };
                 const btn = new Button(tl, br, 'X', 'cropper', '#00FFFF',
                     (b, firstPos, currentPos) => {
                         if (b.startDrag == null) {
@@ -826,6 +826,15 @@ document.addEventListener('DOMContentLoaded', _ => {
     });
     document.querySelector('#download')!.addEventListener('click', () => {
         downloadCanvas(canvas);
+    });
+    document.querySelector('#openimage')!.addEventListener('click', () => {
+        canvas.toBlob(function(blob) {
+            if (!blob) {
+                return;
+            }
+            let url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        });
     });
     let dropzone = document.querySelector('#dropzone')!;
     dropzone.addEventListener('dragover', (e) => {

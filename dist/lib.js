@@ -357,11 +357,11 @@ class AppImg {
         }
         {
             if (!this.cropBtn) {
-                let north = waypoints.n;
+                let center = this.center;
                 let nyoffset = 80;
                 const size = 20;
-                const tl = { x: north.x - size + 50, y: (north.y - size + nyoffset) };
-                const br = { x: north.x + size + 50, y: (north.y + size + nyoffset) };
+                const tl = { x: center.x - size, y: (center.y - size + nyoffset) };
+                const br = { x: center.x + size, y: (center.y + size + nyoffset) };
                 const btn = new Button(tl, br, 'X', 'cropper', '#00FFFF', (b, firstPos, currentPos) => {
                     if (b.startDrag == null) {
                         b.startDrag = new Rect(structuredClone(b.topleft), structuredClone(b.btright));
@@ -612,6 +612,15 @@ document.addEventListener('DOMContentLoaded', _ => {
     });
     document.querySelector('#download').addEventListener('click', () => {
         downloadCanvas(canvas);
+    });
+    document.querySelector('#openimage').addEventListener('click', () => {
+        canvas.toBlob(function (blob) {
+            if (!blob) {
+                return;
+            }
+            let url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        });
     });
     let dropzone = document.querySelector('#dropzone');
     dropzone.addEventListener('dragover', (e) => {

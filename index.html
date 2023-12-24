@@ -49,7 +49,7 @@ form {
 }
 
 
-#download {
+.download {
     display: block;
     width: 300px;
     height: 80px;
@@ -70,11 +70,11 @@ form {
     text-decoration:none;
     text-shadow:0px -1px 0px #5b6178;
 }
-#download:hover {
+.download:hover {
     background:linear-gradient(to bottom, #019ad2 5%, #33bdef 100%);
     background-color:#019ad2;
 }
-#download:active {
+.download:active {
     position:relative;
     top:1px;
 }
@@ -130,8 +130,10 @@ Note that this is NOT built to be used on a phone, and probably won't work at al
 <p><a href="https://github.com/lelandbatey/scrapbook_img_print_layout">Source code on Github.</a></p>
         </div>
     </div>
-    <div class="row">
-        <button id='download'>⬇Download Img</button>
+    <div class="row" style="flex-direction: row;">
+        <button id='download' class='download'>⬇Download Img</button>
+
+        <button id='openimage' class='download' style='margin-left: 60px;'>⧉Open Image in new tab</button>
     </div>
 
 </form>
