@@ -637,7 +637,7 @@ document.addEventListener('DOMContentLoaded', _ => {
         loadImages(files);
     });
     canvas.width = 4000;
-    canvas.height = 3090;
+    canvas.height = 3000;
     const canv = canvas;
     const ctx = canv.getContext('2d');
     function do_the_frame() {
