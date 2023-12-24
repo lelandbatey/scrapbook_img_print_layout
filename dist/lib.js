@@ -449,14 +449,16 @@ class AppImg {
                 this.img = newimg;
                 resolve("hooray");
                 // Disgusting dirty hack to get buttons right:
-                this.deselect();
-                this.select();
+                if (this.state == ImgState.SELECTED) {
+                    this.deselect();
+                    this.select();
+                }
             });
             newimg.src = rawImgData;
         });
     }
 }
-// clickedItem returns the aimg that's been clicked on by the point pos, if an item has been
+// clickedItem returns the item that's been clicked on by the point pos, if an item has been
 // clicked. If items are stacked, then clicks on the one that's in the foreground (has smallest
 // .depth)
 function clickedItem(pos, imgs) {
@@ -466,7 +468,19 @@ function clickedItem(pos, imgs) {
         if (res) {
             return res;
         }
-        continue;
+    }
+    return null;
+}
+// clickedImage returns the img that's been clicked on by the point pos, if an item has been
+// clicked. This gets the AppImg, not whatever button above or near that image which belongs to that
+// image.
+function clickedImg(pos, imgs) {
+    const ordered = depthSort(imgs);
+    for (const [_, aimg] of ordered.entries()) {
+        const res = aimg.intersectPoint(pos);
+        if (res) {
+            return aimg;
+        }
     }
     return null;
 }
@@ -557,6 +571,9 @@ function loadImages(inputFiles) {
                     let rectIndex = window.DRAWSTATE.images.length % window.DRAWSTATE.rects.length;
                     nm.position.x = window.DRAWSTATE.rects[rectIndex].x;
                     nm.position.y = window.DRAWSTATE.rects[rectIndex].y;
+                    if (nm.width < nm.height) {
+                        await nm.rotateClockwise();
+                    }
                     nm.scale = calcScale(nm);
                     window.DRAWSTATE.images.push(nm);
                     window.DRAWSTATE.uiItems.push(nm);
@@ -676,20 +693,20 @@ document.addEventListener('DOMContentLoaded', _ => {
             return;
         }
         event.preventDefault();
-        if (!selectedItem) {
+        const img = clickedImg(firstPos, window.DRAWSTATE.images);
+        if (!img) {
             return;
         }
-        let c = selectedItem.center;
-        if (selectedItem instanceof AppImg) {
-            //console.log(`trying to arrow drag from event.key ${event.key} on image ${selectedItem.name} at x${selectedItem.center.x.toFixed(2)},y${selectedItem.center.y.toFixed(2)}`);
-        }
+        let c = img.center;
         let [xm, ym] = keyDragMap.get(event.key);
         if (event.shiftKey) {
             xm *= 15;
             ym *= 15;
         }
-        selectedItem.dragHandler(c, { x: c.x + xm, y: c.y + ym });
-        selectedItem.dragEndHandler();
+        firstPos.x += xm;
+        firstPos.y += ym;
+        img.dragHandler(c, { x: c.x + xm, y: c.y + ym });
+        img.dragEndHandler();
     });
     function getXY(e) {
         const rect = canvas.getBoundingClientRect();
