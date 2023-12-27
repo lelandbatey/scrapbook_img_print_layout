@@ -19,6 +19,16 @@ function rectWaypoints(tl, br) {
         s: s,
         e: e,
         w: w,
+        oppositeKeys: new Map([
+            ['n', 's'],
+            ['e', 'w'],
+            ['s', 'n'],
+            ['w', 'e'],
+            ['nw', 'se'],
+            ['se', 'nw'],
+            ['sw', 'ne'],
+            ['ne', 'sw'],
+        ]),
         all: new Map([
             ['nw', nw],
             ['sw', sw],
@@ -74,4 +84,56 @@ function shallowCopyImgs(imgs) {
 }
 function clamp(n, min, max) {
     return Math.min(Math.max(n, min), max);
+}
+function calcImgOriginFromStillPoint(p, location, iwidth, iheight) {
+    let ix = 0;
+    let iy = 0;
+    if (location == 'n') {
+        ix = p.x - (iwidth / 2);
+        iy = p.y;
+    }
+    else if (location == 'e') {
+        ix = p.x - iwidth;
+        iy = p.y - (iheight / 2);
+    }
+    else if (location == 's') {
+        ix = p.x - (iwidth / 2);
+        iy = p.y - iheight;
+    }
+    else if (location == 'w') {
+        ix = p.x;
+        iy = p.y - iheight;
+    }
+    else if (location == 'nw') {
+        ix = p.x;
+        iy = p.y;
+    }
+    else if (location == 'ne') {
+        ix = p.x - iwidth;
+        iy = p.y;
+    }
+    else if (location == 'se') {
+        ix = p.x - iwidth;
+        iy = p.y - iheight;
+    }
+    else if (location == 'sw') {
+        ix = p.x;
+        iy = p.y - iheight;
+    }
+    return { x: ix, y: iy };
+}
+function reApplyAllButtonLocations(appimg) {
+    const [tl, br] = appimg.imgBoundingBox();
+    const waypoints = rectWaypoints(
+    //{ x: tl.x - 20, y: tl.y - 20 },
+    //{ x: br.x + 20, y: br.y + 20 },
+    tl, br);
+    for (const btn of appimg.btns) {
+        const wp = waypoints.all.get(btn.name);
+        if (!wp) {
+            continue;
+            //throw new Error(`unknown waypoint for button ${btn.name}`);
+        }
+        btn.center = waypoints.all.get(btn.name);
+    }
 }

@@ -134,11 +134,12 @@ class Rect {
 class Button implements UIItem {
     topleft: Coordinate;
     btright: Coordinate;
-    center: Coordinate;
+    ctr: Coordinate;
 
     startDrag: Rect | null;
     // dunno what this'll be yet
     dragCallback: (b: Button, start: Coordinate, current: Coordinate) => void;
+    dragEndCallback: (b: Button) => void;
     clickCallback: (b: Button, start: Coordinate) => void;
     text: string;
     name: string;
@@ -151,10 +152,11 @@ class Button implements UIItem {
         fill = '#00FF00',
         dragCallback: ((b: Button, start: Coordinate, current: Coordinate) => void) | null = null,
         clickCallback: ((b: Button, start: Coordinate) => void) | null = null,
+        dragEndCallback: ((b: Button) => void) | null = null,
     ) {
         this.topleft = topleft;
         this.btright = btright;
-        this.center = { x: this.topleft.x + (this.width / 2), y: this.topleft.y + (this.height / 2) };
+        this.ctr = { x: this.topleft.x + (this.width / 2), y: this.topleft.y + (this.height / 2) };
         if (dragCallback === null) {
             dragCallback = (b, firstPos, currentPos) => {
                 this.defaultDragHandler(firstPos, currentPos);
@@ -168,7 +170,14 @@ class Button implements UIItem {
                 return;
             };
         }
+        if (dragEndCallback === null) {
+            dragEndCallback = (b) => {
+                b.defaultDragEndHandler();
+                return;
+            };
+        }
         this.dragCallback = dragCallback;
+        this.dragEndCallback = dragEndCallback;
         this.clickCallback = clickCallback;
         this.text = text;
         this.fill = fill;
@@ -206,20 +215,33 @@ class Button implements UIItem {
         }
         const dx = firstPos.x - currentPos.x;
         const dy = firstPos.y - currentPos.y;
-        this.center.x = this.startDrag.center.x - dx;
-        this.center.y = this.startDrag.center.y - dy;
+        const center = this.center;
+        center.x = this.startDrag.center.x - dx;
+        center.y = this.startDrag.center.y - dy;
         const h = this.height;
         const w = this.width;
-        this.topleft.x = this.center.x - (w / 2);
-        this.topleft.y = this.center.y - (h / 2);
-        this.btright.x = this.center.x + (w / 2);
-        this.btright.y = this.center.y + (h / 2);
+        this.topleft.x = center.x - (w / 2);
+        this.topleft.y = center.y - (h / 2);
+        this.btright.x = center.x + (w / 2);
+        this.btright.y = center.y + (h / 2);
     }
     dragHandler(firstPos: Coordinate, currentPos: Coordinate): void {
         this.dragCallback(this, firstPos, currentPos);
     }
     dragEndHandler(): void {
+        this.dragEndCallback(this);
+    }
+    defaultDragEndHandler(): void {
         this.startDrag = null;
+    }
+    get center(): Coordinate {
+        return { x: this.topleft.x + (this.width / 2), y: this.topleft.y + (this.height / 2) }
+    }
+    set center(nc: Coordinate) {
+        const width = this.width;
+        const height = this.width;
+        this.topleft = {x: nc.x - width/2, y:nc.y - height/2};
+        this.btright = {x: nc.x + width/2, y:nc.y + height/2};
     }
 }
 
@@ -476,8 +498,9 @@ class AppImg implements UIItem {
         }
         const [tl, br] = this.imgBoundingBox()!;
         const waypoints = rectWaypoints(
-            { x: tl.x - 20, y: tl.y - 20 },
-            { x: br.x + 20, y: br.y + 20 },
+            //{ x: tl.x - 20, y: tl.y - 20 },
+            //{ x: br.x + 20, y: br.y + 20 },
+            tl, br
         );
         const cornerModifiers = {
             'ne': [1, -1],
@@ -494,12 +517,16 @@ class AppImg implements UIItem {
         for (const [name, corner] of waypoints.corners.entries()) {
             const tl = { x: corner.x - 10, y: corner.y - 10 };
             const br = { x: corner.x + 10, y: corner.y + 10 };
-            const getOthers = (): Button[] => this.btns.filter(b => b.name !== name);
             const btn = new Button(tl, br, cornerText[name], name, '#00FF00', (b: Button, start: Coordinate, currentPos: Coordinate) => {
-                // gotta call the default for movement.
-                b.defaultDragHandler(start, currentPos);
+                for (const obtn of this.btns) {
+                    if (obtn.startDrag == null) {
+                        obtn.startDrag = new Rect(structuredClone(obtn.topleft), structuredClone(obtn.btright));
+                    }
+                }
+                // Get the distance the mouse has traveled in this drag
 
                 if (!!!b.startDrag?.intersectPoint(start)) {
+                    b.defaultDragHandler(start, currentPos);
                     return;
                 }
                 if (this.dragStartScale === null) {
@@ -518,6 +545,17 @@ class AppImg implements UIItem {
                 const newScaleH = newH / this.img!.naturalHeight;
                 const newScaleW = newW / this.img!.naturalWidth;
                 this.scale = Math.max(newScaleH, newScaleW);
+                const oppositeName: string = waypoints.oppositeKeys.get(b.name)!;
+                const opposite = this.btns.filter(x => x.name == oppositeName);
+                this.position = calcImgOriginFromStillPoint(opposite[0].startDrag!.center, oppositeName, this.width, this.height)
+                reApplyAllButtonLocations(this);
+            }, null, (b: Button) => {
+                b.startDrag = null;
+                this.dragStartposition = null;
+                this.dragStartScale = null;
+                for (const btn of this.btns) {
+                    btn.startDrag = null;
+                }
             });
             this.btns.push(btn);
         }
@@ -805,6 +843,28 @@ function getImagesFromDOM(): NamedBlob[] {
     return blobList;
 }
 
+function loadTestImages() {
+	let imageurls = [
+		//'http://lelandbatey.com/projects/jpeg_compression_comparison/month_07_compressed_40/2016-07-03_21.39.05.jpg',
+		//'http://lelandbatey.com/projects/jpeg_compression_comparison/month_07_compressed_40/2016-07-01_21.32.38.jpg',
+		//'http://lelandbatey.com/projects/jpeg_compression_comparison/month_07_compressed_40/2016-07-06_18.50.25.jpg',
+		'2016-07-03_21.39.05.jpg',
+		'2016-07-01_21.32.38.jpg',
+		'2016-07-06_18.50.25.jpg',
+		'Screenshot_2023-12-18_14-37-12.png',
+	];
+	let blobList: NamedBlob[] = [];
+	const loadAll = (async () => {
+		for (const iurl of imageurls) {
+			const resp: Body = await fetch(iurl);
+			const blob: Blob = await resp.blob();
+			blobList.push({name: iurl, blob: blob});
+		}
+	})();
+	loadAll.then(()=>{
+		loadImages(blobList);
+	});
+}
 
 document.addEventListener('DOMContentLoaded', _ => {
     for (let row = 0; row < 3; row++) {
@@ -818,6 +878,7 @@ document.addEventListener('DOMContentLoaded', _ => {
     // sometimes on page load, the user will have items in the #imgfile input because they selected
     // them then reloaded the page. In that case, we *DO* want to immediately reload these images.
     loadImages(getImagesFromDOM());
+    loadTestImages();
 
     const canvas: HTMLCanvasElement = document.querySelector('#canvas')!;
 

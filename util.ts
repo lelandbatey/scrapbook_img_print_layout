@@ -14,6 +14,7 @@ type WayPoints = {
     all: Map<string, Coordinate>;
     corners: Map<string, Coordinate>;
     edges: Map<string, Coordinate>;
+    oppositeKeys: Map<string, string>;
 }
 
 function rectWaypoints(tl: Coordinate, br: Coordinate): WayPoints {
@@ -34,6 +35,16 @@ function rectWaypoints(tl: Coordinate, br: Coordinate): WayPoints {
         s: s,
         e: e,
         w: w,
+        oppositeKeys: new Map<string, string>([
+            ['n', 's'],
+            ['e', 'w'],
+            ['s', 'n'],
+            ['w', 'e'],
+            ['nw', 'se'],
+            ['se', 'nw'],
+            ['sw', 'ne'],
+            ['ne', 'sw'],
+        ]),
         all: new Map<string, Coordinate>([
             ['nw', nw],
             ['sw', sw],
@@ -104,4 +115,53 @@ function shallowCopyImgs(imgs: AppImg[]) {
 }
 function clamp(n: number, min: number, max: number): number {
     return Math.min(Math.max(n, min), max);
+}
+
+function calcImgOriginFromStillPoint(p: Coordinate, location: string, iwidth: number, iheight: number): Coordinate {
+    let ix: number = 0;
+    let iy: number = 0;
+    if (location == 'n') {
+        ix = p.x - (iwidth/2);
+        iy = p.y;
+    } else if (location == 'e') {
+        ix = p.x - iwidth;
+        iy = p.y - (iheight/2);
+    } else if (location == 's') {
+        ix = p.x - (iwidth/2);
+        iy = p.y - iheight;
+    } else if (location == 'w') {
+        ix = p.x;
+        iy = p.y - iheight;
+    } else if (location == 'nw') {
+        ix = p.x;
+        iy = p.y;
+    } else if (location == 'ne') {
+        ix = p.x - iwidth;
+        iy = p.y;
+    } else if (location == 'se') {
+        ix = p.x - iwidth;
+        iy = p.y - iheight;
+    } else if (location == 'sw') {
+        ix = p.x;
+        iy = p.y - iheight;
+    }
+
+    return {x: ix, y: iy};
+}
+
+function reApplyAllButtonLocations(appimg: AppImg): void {
+    const [tl, br] = appimg.imgBoundingBox()!;
+    const waypoints = rectWaypoints(
+        //{ x: tl.x - 20, y: tl.y - 20 },
+        //{ x: br.x + 20, y: br.y + 20 },
+        tl, br
+    );
+    for (const btn of appimg.btns) {
+        const wp = waypoints.all.get(btn.name);
+        if (!wp) {
+            continue;
+            //throw new Error(`unknown waypoint for button ${btn.name}`);
+        }
+        btn.center = waypoints.all.get(btn.name)!;
+    }
 }
