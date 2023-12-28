@@ -151,16 +151,11 @@ function calcImgOriginFromStillPoint(p: Coordinate, location: string, iwidth: nu
 
 function reApplyAllButtonLocations(appimg: AppImg): void {
     const [tl, br] = appimg.imgBoundingBox()!;
-    const waypoints = rectWaypoints(
-        //{ x: tl.x - 20, y: tl.y - 20 },
-        //{ x: br.x + 20, y: br.y + 20 },
-        tl, br
-    );
+    const waypoints = rectWaypoints(tl, br);
     for (const btn of appimg.btns) {
         const wp = waypoints.all.get(btn.name);
         if (!wp) {
             continue;
-            //throw new Error(`unknown waypoint for button ${btn.name}`);
         }
         btn.center = waypoints.all.get(btn.name)!;
     }

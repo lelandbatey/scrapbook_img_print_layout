@@ -42,13 +42,11 @@ class Button {
         if (dragCallback === null) {
             dragCallback = (b, firstPos, currentPos) => {
                 this.defaultDragHandler(firstPos, currentPos);
-                //console.log(`dragging name: ${b.name} Start: ${start}  currentPos: ${current}`);
                 return;
             };
         }
         if (clickCallback === null) {
             clickCallback = (b, start) => {
-                //console.log(`Clicked!: name: ${b.name} Start: ${start}`);
                 return;
             };
         }
@@ -325,10 +323,7 @@ class AppImg {
             o.deselect();
         }
         const [tl, br] = this.imgBoundingBox();
-        const waypoints = rectWaypoints(
-        //{ x: tl.x - 20, y: tl.y - 20 },
-        //{ x: br.x + 20, y: br.y + 20 },
-        tl, br);
+        const waypoints = rectWaypoints(tl, br);
         const cornerModifiers = {
             'ne': [1, -1],
             'se': [1, 1],
@@ -577,6 +572,10 @@ window.DRAWSTATE = {
     dbgtext: '',
 };
 function downloadCanvas(canvas) {
+    // first, deactivate everything
+    for (const img of window.DRAWSTATE.images) {
+        img.deselect();
+    }
     const now = new Date();
     const year_s = `${now.getFullYear()}`;
     const month_s = `${now.getMonth()}`.padStart(2, '0');
@@ -640,7 +639,6 @@ function loadTestImages() {
         '2016-07-03_21.39.05.jpg',
         '2016-07-01_21.32.38.jpg',
         '2016-07-06_18.50.25.jpg',
-        'Screenshot_2023-12-18_14-37-12.png',
     ];
     let blobList = [];
     const loadAll = (async () => {
@@ -713,7 +711,7 @@ document.addEventListener('DOMContentLoaded', _ => {
     function do_the_frame() {
         ctx.clearRect(0, 0, canv.width, canv.height);
         ctx.save();
-        for (const uii of depthSort(window.DRAWSTATE.uiItems).reverse()) {
+        for (const uii of depthSort(window.DRAWSTATE.images).reverse()) {
             ctx.save();
             uii.draw(ctx);
             ctx.restore();

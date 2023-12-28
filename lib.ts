@@ -37,7 +37,7 @@ Features:
 - [X] ⇲ ⇱ scale images interactively
     - [X] Draw the ⇲ ⇱ scale handle
     - [X] Scale the image upon click-dragging scale handle
-    - [ ] Anchor the opposite corner when click-drag scaling
+    - [X] Anchor the opposite corner when click-drag scaling
 - [X] draw the cropped version of each image
 
 // draw the 9 boxes on the screen
@@ -137,7 +137,6 @@ class Button implements UIItem {
     ctr: Coordinate;
 
     startDrag: Rect | null;
-    // dunno what this'll be yet
     dragCallback: (b: Button, start: Coordinate, current: Coordinate) => void;
     dragEndCallback: (b: Button) => void;
     clickCallback: (b: Button, start: Coordinate) => void;
@@ -160,13 +159,11 @@ class Button implements UIItem {
         if (dragCallback === null) {
             dragCallback = (b, firstPos, currentPos) => {
                 this.defaultDragHandler(firstPos, currentPos);
-                //console.log(`dragging name: ${b.name} Start: ${start}  currentPos: ${current}`);
                 return;
             };
         }
         if (clickCallback === null) {
             clickCallback = (b, start) => {
-                //console.log(`Clicked!: name: ${b.name} Start: ${start}`);
                 return;
             };
         }
@@ -497,11 +494,7 @@ class AppImg implements UIItem {
             o.deselect();
         }
         const [tl, br] = this.imgBoundingBox()!;
-        const waypoints = rectWaypoints(
-            //{ x: tl.x - 20, y: tl.y - 20 },
-            //{ x: br.x + 20, y: br.y + 20 },
-            tl, br
-        );
+        const waypoints = rectWaypoints(tl, br);
         const cornerModifiers = {
             'ne': [1, -1],
             'se': [1, 1],
@@ -770,7 +763,7 @@ const ypad = 150;
 
 interface Window {
     DRAWSTATE: {
-        uiItems: any[];
+        uiItems: UIItem[];
         images: AppImg[];
         rects: any[];
         dbgtext: string;
@@ -784,6 +777,11 @@ window.DRAWSTATE = {
 };
 
 function downloadCanvas(canvas: HTMLCanvasElement) {
+    // first, deactivate everything
+    for (const img of window.DRAWSTATE.images) {
+        img.deselect();
+    }
+
     const now = new Date();
     const year_s = `${now.getFullYear()}`;
     const month_s = `${now.getMonth()}`.padStart(2, '0');
@@ -851,7 +849,6 @@ function loadTestImages() {
 		'2016-07-03_21.39.05.jpg',
 		'2016-07-01_21.32.38.jpg',
 		'2016-07-06_18.50.25.jpg',
-		'Screenshot_2023-12-18_14-37-12.png',
 	];
 	let blobList: NamedBlob[] = [];
 	const loadAll = (async () => {
@@ -928,7 +925,7 @@ document.addEventListener('DOMContentLoaded', _ => {
         ctx.clearRect(0, 0, canv.width, canv.height);
         ctx.save();
 
-        for (const uii of depthSort(window.DRAWSTATE.uiItems).reverse()) {
+        for (const uii of depthSort(window.DRAWSTATE.images).reverse()) {
             ctx.save();
             uii.draw(ctx);
             ctx.restore();
